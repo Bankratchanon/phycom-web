@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Safe A-Train</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+  วิธีใช้ไฟล์นี้ (อ่านก่อน!)
+  1) แก้ข้อมูลหลักๆ ที่ "ส่วนตั้งค่า" ในแท็ก <script> ด้านล่างสุดของไฟล์
+     (ชื่อโปรเจกต์ ลิงก์ YouTube รูปโปสเตอร์ รายชื่อสมาชิก)
+  2) ข้อความในหน้า "รายละเอียด" แก้ตรงๆ ได้เลย หาคำว่า ✏️ แก้ตรงนี้
+  3) อยากเปลี่ยนสี แก้ที่ส่วน :root ใน <style> ด้านล่าง
+  4) ทำเสร็จเปิดไฟล์นี้ด้วย Chrome ได้เลย ไม่ต้องลงโปรแกรมเพิ่ม
+============================================================ -->
+
+<style>
+/* ---------- สี (เปลี่ยนได้ตรงนี้) ---------- */
+:root{
+  --bg:#eef2f5;        /* พื้นหลัง */
+  --ink:#16212b;       /* สีตัวอักษรหลัก */
+  --steel:#4a5b6b;     /* สีตัวอักษรรอง */
+  --card:#ffffff;      /* สีการ์ด */
+  --line:#d3dce3;      /* สีเส้นขอบ */
+  --green:#2fa66a;
+  --yellow:#f2b825;
+  --red:#d64545;
+  --accent:#16212b;    /* สีปุ่ม/แถบด้านบน */
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{font-family:"IBM Plex Sans Thai",system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.7}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+
+/* ---------- แถบเมนูด้านบน ---------- */
+header{background:var(--accent);color:#fff;position:sticky;top:0;z-index:10}
+.bar{max-width:1000px;margin:auto;padding:10px 20px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between}
+.brand{font-weight:700}
+nav{display:flex;flex-wrap:wrap;gap:4px}
+nav button{font:inherit;background:none;border:0;color:#c9d4dd;padding:6px 12px;border-radius:6px;cursor:pointer}
+nav button:hover{color:#fff;background:#ffffff1a}
+nav button.active{color:var(--accent);background:#fff;font-weight:500}
+
+/* ---------- โครงหน้า ---------- */
+main{max-width:1000px;margin:auto;padding:32px 20px 60px}
+.page{display:none}
+.page.show{display:block}
+h1{font-size:clamp(1.9rem,5vw,3rem);line-height:1.25;margin-bottom:10px}
+h2{font-size:1.5rem;margin:36px 0 12px}
+h3{font-size:1.1rem;margin-bottom:4px}
+p{margin-bottom:10px;max-width:68ch}
+.muted{color:var(--steel)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.btn{font:inherit;display:inline-block;background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 18px;cursor:pointer;text-decoration:none}
+.btn.ghost{background:none;color:var(--ink);border:1.5px solid var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+
+/* ---------- หน้าแรก + ไฟจราจรกดเล่นได้ ---------- */
+.hero{display:grid;gap:30px;grid-template-columns:1fr auto;align-items:center}
+@media(max-width:700px){.hero{grid-template-columns:1fr}}
+.signal{display:flex;gap:18px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.lamps{background:#10181f;border-radius:40px;padding:14px 12px;display:flex;flex-direction:column;gap:10px}
+.lamp{width:46px;height:46px;border-radius:50%;background:#2a3640;transition:background .25s,box-shadow .25s}
+.lamp.on.g{background:var(--green);box-shadow:0 0 18px var(--green)}
+.lamp.on.y{background:var(--yellow);box-shadow:0 0 18px var(--yellow)}
+.lamp.on.r{background:var(--red);box-shadow:0 0 18px var(--red)}
+.signal-text{max-width:210px}
+.signal-text b{display:block;font-size:1.05rem;margin-bottom:4px}
+.signal-text .btn{margin-top:10px;padding:7px 14px}
+
+/* ---------- การ์ดขั้นตอน ---------- */
+.step{border-left:6px solid var(--steel)}
+.step.s1{border-color:var(--yellow)}
+.step.s2{border-color:var(--red)}
+.step.s3{border-color:var(--green)}
+.step ul{padding-left:20px;color:var(--steel)}
+
+/* ---------- ตาราง ---------- */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line)}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line)}
+th{background:#e3eaef}
+
+/* ---------- แผนภาพระบบ ---------- */
+.arch{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px}
+.node{background:var(--card);border:2px solid var(--ink);border-radius:10px;padding:10px 14px;text-align:center;min-width:130px}
+.node small{display:block;color:var(--steel)}
+.arrow{color:var(--steel);font-size:.85rem;text-align:center}
+
+/* ---------- วิดีโอ / โปสเตอร์ ---------- */
+.video{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.poster img{display:block;width:100%;border-radius:10px;border:1px solid var(--line);background:#fff}
+.placeholder{padding:50px 20px;text-align:center;color:var(--steel);border:2px dashed var(--line);border-radius:10px}
+
+/* ---------- สมาชิก ---------- */
+.member{text-align:center}
+.avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;background:#d3dce3;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:var(--steel)}
+.member ul{list-style:none;padding:0;color:var(--steel);font-size:.95rem}
+
+footer{text-align:center;color:var(--steel);padding:20px;font-size:.9rem}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="bar">
+    <span class="brand" id="brandName">Safe A-Train</span>
+    <nav id="nav">
+      <button data-page="home">หน้าแรก</button>
+      <button data-page="video">วิดีโอ</button>
+      <button data-page="poster">โปสเตอร์</button>
+      <button data-page="detail">รายละเอียด</button>
+      <button data-page="team">สมาชิก</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ======================= หน้า 1: หน้าแรก ======================= -->
+<section class="page" id="home">
+  <div class="hero">
+    <div>
+      <h1 id="projectTitle">Safe A-Train</h1>
+      <p class="muted" id="projectTagline">คำอธิบายสั้นๆ</p>
+      <!-- ✏️ แก้ตรงนี้: ข้อความแนะนำโปรเจกต์ 2-3 บรรทัด -->
+      <p>
+        โมเดลสถานีรถไฟจำลองที่ใช้ Arduino UNO R4 WiFi 2 บอร์ด ตรวจจับรถไฟด้วยเลเซอร์
+        แล้วสื่อสารกันผ่าน MQTT เพื่อสั่งไม้กั้นลงและขึ้นโดยอัตโนมัติ
+        ลดความผิดพลาดจากคนควบคุม
+      </p>
+      <div class="row">
+        <button class="btn" data-go="video">ดูวิดีโอสาธิต</button>
+        <button class="btn ghost" data-go="detail">อ่านรายละเอียด</button>
+      </div>
+    </div>
+
+    <!-- ไฟจราจรกดเล่นได้ -->
+    <div class="signal" aria-live="polite">
+      <div class="lamps">
+        <div class="lamp r" id="lampR"></div>
+        <div class="lamp y" id="lampY"></div>
+        <div class="lamp g" id="lampG"></div>
+      </div>
+      <div class="signal-text">
+        <b id="sigTitle"></b>
+        <span class="muted" id="sigDesc"></span><br>
+        <button class="btn" id="sigBtn">ขั้นถัดไป</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= หน้า 2: วิดีโอ ======================= -->
+<section class="page" id="video">
+  <h1>วิดีโออธิบายและสาธิต</h1>
+  <p class="muted">อธิบายการทำงานของระบบและสาธิตการใช้งานจริง</p>
+  <div id="videoBox"></div>
+  <p style="margin-top:12px">ดูบน YouTube: <a id="videoLink" href="#" target="_blank" rel="noopener">เปิดลิงก์</a></p>
+</section>
+
+<!-- ======================= หน้า 3: โปสเตอร์ ======================= -->
+<section class="page" id="poster">
+  <h1>โปสเตอร์</h1>
+  <div class="poster" id="posterBox"></div>
+  <div class="row"><a class="btn" id="posterDownload" href="#" download>ดาวน์โหลดโปสเตอร์</a></div>
+</section>
+
+<!-- ======================= หน้า 4: รายละเอียด ======================= -->
+<section class="page" id="detail">
+  <h1>รายละเอียดโปรเจกต์</h1>
+  <h2>ที่มาและเป้าหมาย</h2>
+  <!-- ✏️ แก้ตรงนี้ -->
+  <p>
+    ทางผ่านรถไฟที่ต้องใช้คนกดไม้กั้นเอง เสี่ยงต่อความผิดพลาด เช่น ลืมกดหรือกดช้า
+    เราจึงทำระบบที่ตรวจจับรถไฟล่วงหน้า แจ้งเตือนผู้รับผิดชอบ
+    และลดไม้กั้นให้เองหากไม่มีใครกด
+  </p>
+
+  <h2>ขั้นตอนการทำงาน</h2>
+  <div class="grid">
+    <div class="card step s1">
+      <h3>1. ตรวจพบรถไฟ</h3>
+      <ul>
+        <li>เลเซอร์จุดแรกถูกบัง</li>
+        <li>Buzzer ส่งเสียงเตือน</li>
+        <li>ส่งค่าผ่าน MQTT ไปยังอีกบอร์ด</li>
+        <li>ไฟ เขียว → เหลือง</li>
+      </ul>
+    </div>
+    <div class="card step s2">
+      <h3>2. ลดไม้กั้น</h3>
+      <ul>
+        <li>แจ้งเตือนผู้รับผิดชอบให้กดลดไม้กั้น</li>
+        <li>ถ้าไม่กด ระบบลดให้เองก่อนรถไฟมาถึง</li>
+        <li>ไฟ เหลือง → แดง</li>
+        <li>Servo ลดไม้กั้นลง</li>
+      </ul>
+    </div>
+    <div class="card step s3">
+      <h3>3. รถไฟผ่านไปแล้ว</h3>
+      <ul>
+        <li>เลเซอร์จุดที่สองตรวจว่ารถไฟผ่านไปแล้ว</li>
+        <li>Servo ยกไม้กั้นขึ้น</li>
+        <li>ไฟ แดง → เขียว</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>โหมดการทำงาน</h2>
+  <div class="grid">
+    <div class="card"><h3>Manual</h3><p class="muted">ผู้รับผิดชอบกดลดไม้กั้นผ่าน Blynk ถ้าไม่กด ระบบลดให้เองเพื่อป้องกัน Human error</p></div>
+    <div class="card"><h3>Auto</h3><p class="muted">ระบบทำงานเองทั้งหมด ไม่ต้องมีคนกดลดหรือยกไม้กั้น</p></div>
+  </div>
+
+  <h2>โครงสร้างระบบ</h2>
+  <div class="card">
+    <div class="arch">
+      <div class="node">Arduino ตัวที่ 1<small>เลเซอร์</small></div>
+      <div class="arrow">MQTT<br>⇄</div>
+      <div class="node">HiveMQ<small>ตัวกลางส่งข้อความ</small></div>
+      <div class="arrow">MQTT<br>⇄</div>
+      <div class="node">Arduino ตัวที่ 2<small>Buzzer + ไฟสัญญาณ + Servo + เลเซอร์จุดที่ 2</small></div>
+      <div class="arrow">WiFi<br>⇄</div>
+      <div class="node">Blynk<small>หน้าควบคุมบนเว็บ</small></div>
+    </div>
+  </div>
+
+  <h2>อุปกรณ์ที่ใช้</h2>
+  <div class="table-wrap">
+    <table>
+      <tr><th>อุปกรณ์</th><th>จำนวน</th><th>หน้าที่</th></tr>
+      <tr><td>Arduino UNO R4 WiFi</td><td>2</td><td>สมองของระบบ เชื่อม WiFi และ MQTT</td></tr>
+      <tr><td>Laser</td><td>2</td><td>ยิงแสงข้ามราง</td></tr>
+      <tr><td>Laser Detector Module</td><td>2</td><td>ตรวจว่าแสงถูกบังหรือไม่ (มีรถไฟผ่าน)</td></tr>
+      <tr><td>SG90 Servo Motor</td><td>1</td><td>ขยับไม้กั้น</td></tr>
+      <tr><td>LED Module 3 สี (ไฟจราจร)</td><td>1</td><td>แสดงสถานะ เขียว / เหลือง / แดง</td></tr>
+      <tr><td>Active Buzzer Module</td><td>1</td><td>ส่งเสียงเตือน</td></tr>
+      <tr><td>รถไฟของเล่นพร้อมราง</td><td>1</td><td>ใช้จำลองสถานการณ์</td></tr>
+    </table>
+  </div>
+  <p class="muted" style="margin-top:8px">ซอฟต์แวร์/บริการ: HiveMQ WebSocket Client, Blynk IoT (Web)</p>
+
+  <h2>ปัญหาที่เจอและแนวทางพัฒนาต่อ</h2>
+  <div class="card">
+    <ul style="padding-left:20px">
+      <li>ปัญหาที่เจอ: การตั้งค่าให้บอร์ดส่งคำสั่งขึ้น MQTT แล้วอีกบอร์ดรับคำสั่งนั้นทำได้ช้า แต่สามารถแก้ได้แล้ว , สายไฟเสีย , การอ่านค่าบางทีอาจไม่ถูกต้องเลยต้องมาแก้โค้ดใหม่</li>
+      <li>แนวทางพัฒนาต่อ: เพิ่มการแจ้งเตือนบนมือถือให้สามารถนำไปใช้ได้จริง</li>
+    </ul>
+  </div>
+
+  <h2>ลิงก์ที่เกี่ยวข้อง</h2>
+  <p>
+    <a href="https://github.com/MEWHEN-sys/TrafficTrainSimulation" target="_blank" rel="noopener">โค้ดบน GitHub</a>
+  </p>
+</section>
+
+<!-- ======================= หน้า 5: สมาชิก ======================= -->
+<section class="page" id="team">
+  <h1>สมาชิกกลุ่ม</h1>
+  <p class="muted" id="teamInfo"></p>
+  <div class="grid" id="teamBox"></div>
+</section>
+
+</main>
+
+<footer id="footerText"></footer>
+
+<script>
+/* ============================================================
+   ✏️ ส่วนตั้งค่า — แก้เฉพาะตรงนี้ก็พอสำหรับข้อมูลหลัก
+   (แก้ข้อความที่อยู่ใน "..." เท่านั้น อย่าลบเครื่องหมาย , หรือ " )
+============================================================ */
+const CONFIG = {
+  projectName: "Safe A-Train",          // ชื่อโปรเจกต์
+  tagline: "ตรวจจับรถไฟด้วยเลเซอร์ ควบคุมผ่าน IoT",  // ประโยคสั้นๆ บอกว่าทำอะไร
+
+  youtubeUrl: "https://youtu.be/8kT3ZACvVXo?si=sCZluPbxiYfkQ9F9",            // วางลิงก์ YouTube เช่น "https://www.youtube.com/watch?v=xxxx"
+
+  posterImage: "https://i.ibb.co/qMxr6xkv/Phycom-Poster.png",           // ชื่อไฟล์รูปโปสเตอร์ เช่น "poster.png" (วางไฟล์ไว้โฟลเดอร์เดียวกับ index.html)
+
+  teamInfo: "รายวิชา PHYSICAL COMPUTING",     // บรรทัดใต้หัวข้อสมาชิก
+
+  // เพิ่มสมาชิก: คัดลอกบรรทัด { ... }, ไปวางต่อท้ายได้เลย
+  // photo ใส่ชื่อไฟล์รูป เช่น "som.jpg" หรือเว้นว่างไว้ "" จะแสดงตัวอักษรแรกของชื่อแทน
+  members: [
+    { name: "68070116 นายพลกฤต ทานะขันธ์", photo: "https://i.ibb.co/MDsvJz19/20260626-102013.jpg" },
+    { name: "68070203 นายอภิมุข วีรกุลวัฒนา", photo: " https://i.ibb.co/JRKwk01J/IMG-6347.jpg" },
+    { name: "68070224 นายคณิน สินคณารักษ์", photo: "" },
+    { name: "68070290 ปุณณสิน ครุฑสุวรรณ", photo: "" },
+    { name: "68070308 นายรัชชานนท์ แป้นจันทร์", photo: "https://i.ibb.co/67D4XR5q/i-Bank.jpg" }
+  ]
+};
+
+/* ============================================================
+   ด้านล่างนี้เป็นโค้ดที่ทำให้เว็บทำงาน (ไม่ต้องแก้ก็ได้)
+============================================================ */
+
+// ---- ใส่ข้อมูลจาก CONFIG ลงหน้าเว็บ ----
+document.title = CONFIG.projectName;
+document.getElementById("brandName").textContent = CONFIG.projectName;
+document.getElementById("projectTitle").textContent = CONFIG.projectName;
+document.getElementById("projectTagline").textContent = CONFIG.tagline;
+document.getElementById("teamInfo").textContent = CONFIG.teamInfo;
+document.getElementById("footerText").textContent = CONFIG.projectName + " · โปรเจกต์รายวิชา PHYSICAL COMPUTING ";
+
+// ---- วิดีโอ ----
+function getYoutubeId(url) {
+  const m = url.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+const videoBox = document.getElementById("videoBox");
+const videoLink = document.getElementById("videoLink");
+const vid = getYoutubeId(CONFIG.youtubeUrl);
+if (vid) {
+  videoBox.innerHTML = '<div class="video"><iframe src="https://www.youtube.com/embed/' + vid +
+    '" title="วิดีโอโปรเจกต์" allowfullscreen></iframe></div>';
+  videoLink.href = CONFIG.youtubeUrl;
+  videoLink.textContent = CONFIG.youtubeUrl;
+} else {
+  videoBox.innerHTML = '<div class="placeholder">ยังไม่ได้ใส่ลิงก์วิดีโอ<br>เปิดไฟล์นี้แล้วแก้ youtubeUrl ในส่วนตั้งค่า</div>';
+  videoLink.parentElement.style.display = "none";
+}
+
+// ---- โปสเตอร์ ----
+const posterBox = document.getElementById("posterBox");
+const posterDl = document.getElementById("posterDownload");
+if (CONFIG.posterImage) {
+  posterBox.innerHTML = '<a href="' + CONFIG.posterImage + '" target="_blank" title="คลิกเพื่อดูขนาดเต็ม"><img src="' +
+    CONFIG.posterImage + '" alt="โปสเตอร์โปรเจกต์"></a>';
+  posterDl.href = CONFIG.posterImage;
+} else {
+  posterBox.innerHTML = '<div class="placeholder">ยังไม่ได้ใส่รูปโปสเตอร์<br>วางไฟล์รูปไว้โฟลเดอร์เดียวกัน แล้วแก้ posterImage ในส่วนตั้งค่า</div>';
+  posterDl.style.display = "none";
+}
+
+// ---- สมาชิก ----
+document.getElementById("teamBox").innerHTML = CONFIG.members.map(function (m) {
+  const pic = m.photo
+    ? '<img class="avatar" src="' + m.photo + '" alt="' + m.name + '">'
+    : '<div class="avatar">' + m.name.charAt(0) + '</div>';
+  return '<div class="card member">' + pic + "<h3>" + m.name + "</h3><ul>" + "</ul></div>";
+}).join("");
+
+// ---- สลับหน้า ----
+const pages = document.querySelectorAll(".page");
+const navBtns = document.querySelectorAll("nav button");
+function showPage(id) {
+  if (!document.getElementById(id)) id = "home";
+  pages.forEach(function (p) { p.classList.toggle("show", p.id === id); });
+  navBtns.forEach(function (b) { b.classList.toggle("active", b.dataset.page === id); });
+  history.replaceState(null, "", "#" + id);
+  window.scrollTo(0, 0);
+}
+navBtns.forEach(function (b) { b.addEventListener("click", function () { showPage(b.dataset.page); }); });
+document.querySelectorAll("[data-go]").forEach(function (b) {
+  b.addEventListener("click", function () { showPage(b.dataset.go); });
+});
+showPage(location.hash.replace("#", "") || "home");
+
+// ---- ไฟจราจรกดเล่นได้ (หน้าแรก) ----
+// ✏️ แก้ข้อความอธิบายแต่ละขั้นได้ตรงนี้
+const SIGNAL_STEPS = [
+  { lamp: "g", title: "ไฟเขียว", desc: "ไม่มีรถไฟ รถยนต์ผ่านได้ ไม้กั้นเปิด" },
+  { lamp: "y", title: "ไฟเหลือง", desc: "ตรวจพบรถไฟ Buzzer ดัง แจ้งเตือนผู้รับผิดชอบ" },
+  { lamp: "r", title: "ไฟแดง", desc: "ไม้กั้นลง รถไฟกำลังผ่านนนนนน!" }
+];
+let sigIndex = 0;
+function drawSignal() {
+  const s = SIGNAL_STEPS[sigIndex];
+  ["R", "Y", "G"].forEach(function (c) {
+    document.getElementById("lamp" + c).classList.toggle("on", c.toLowerCase() === s.lamp);
+  });
+  document.getElementById("sigTitle").textContent = s.title;
+  document.getElementById("sigDesc").textContent = s.desc;
+}
+document.getElementById("sigBtn").addEventListener("click", function () {
+  sigIndex = (sigIndex + 1) % SIGNAL_STEPS.length;
+  drawSignal();
+});
+drawSignal();
+</script>
+</body>
+</html>
